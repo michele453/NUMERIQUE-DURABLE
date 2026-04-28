@@ -331,6 +331,34 @@ def debug():
             "traceback": traceback.format_exc()
         }
 
+
+@app.route("/force-init")
+def force_init():
+    """Force l'initialisation de la base de données."""
+    global _db_initialized
+    
+    try:
+        print("[FORCE INIT] Forçage de l'initialisation...")
+        _db_initialized = False  # Reset le flag
+        
+        # Forcer la vérification et l'initialisation
+        initialize_db()
+        
+        return {
+            "status": "ok",
+            "message": "Initialisation forcée terminée"
+        }
+    except Exception as e:
+        import traceback
+        print(f"[FORCE INIT ERROR] {e}")
+        print(traceback.format_exc())
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
