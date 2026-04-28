@@ -28,6 +28,7 @@ def _table_exists():
     """Vérifie si la table utilisateur existe."""
     try:
         if DATABASE_URL:
+            print("[TABLE CHECK] Vérification sur PostgreSQL...")
             import psycopg2
             conn = psycopg2.connect(DATABASE_URL)
             cur = conn.cursor()
@@ -38,22 +39,33 @@ def _table_exists():
                 );
             """)
             result = cur.fetchone()[0]
+            print(f"[TABLE CHECK] PostgreSQL - Table existe: {result}")
             cur.close()
             conn.close()
             return result
         else:
+            print("[TABLE CHECK] Vérification sur SQLite...")
             import sqlite3
             db_path = app.config["DATABASE"]
+            print(f"[TABLE CHECK] Chemin DB: {db_path}")
+            print(f"[TABLE CHECK] DB existe: {os.path.exists(db_path)}")
+            
             if not os.path.exists(db_path):
+                print("[TABLE CHECK] DB n'existe pas")
                 return False
+            
             conn = sqlite3.connect(db_path)
             cur = conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='utilisateur'"
             )
             result = cur.fetchone() is not None
+            print(f"[TABLE CHECK] SQLite - Table existe: {result}")
             conn.close()
             return result
-    except Exception:
+    except Exception as e:
+        import traceback
+        print(f"[TABLE CHECK ERROR] Erreur: {e}")
+        print(traceback.format_exc())
         return False
 
 
@@ -161,18 +173,32 @@ def seed_db_command():
 
 def seed_db():
     """Insère les données de test dans la base de données."""
-    db = get_db()
-    seed_path = os.path.join(os.path.dirname(__file__), "..", "database", "seed.sql")
-    with open(seed_path, "r", encoding="utf-8") as f:
-        sql = f.read()
+    try:
+        db = get_db()
+        seed_path = os.path.join(os.path.dirname(__file__), "..", "database", "seed.sql")
+        print(f"[SEED] Lecture du fichier seed: {seed_path}")
+        
+        with open(seed_path, "r", encoding="utf-8") as f:
+            sql = f.read()
+        
+        print(f"[SEED] SQL length: {len(sql)} caractères")
 
-    if getattr(g, "_db_type", "sqlite") == "postgres":
-        cur = db.cursor()
-        cur.execute(sql)
-        db.commit()
-    else:
-        db.executescript(sql)
-        db.commit()
+        if getattr(g, "_db_type", "sqlite") == "postgres":
+            print("[SEED] Exécution sur PostgreSQL")
+            cur = db.cursor()
+            cur.execute(sql)
+            db.commit()
+        else:
+            print("[SEED] Exécution sur SQLite")
+            db.executescript(sql)
+            db.commit()
+        
+        print("[SEED] Seed exécutée avec succès")
+    except Exception as e:
+        import traceback
+        print(f"[SEED ERROR] Erreur: {e}")
+        print(traceback.format_exc())
+        raise
 
 
 def ensure_db_initialized():
@@ -232,15 +258,32 @@ def initialize_db():
     """Initialise la base de données au premier appel HTTP si nécessaire."""
     global _db_initialized
     
-    if not _db_initialized and not _table_exists():
-        try:
-            print("Initialisation de la base de données au premier appel...")
-            init_db()
-            seed_db()
-            print("Base de données initialisée avec succès.")
-        except Exception as e:
-            print(f"Erreur lors de l'initialisation de la base: {e}")
-        finally:
+    if not _db_initialized:
+        table_exists = _table_exists()
+        print(f"[DB CHECK] Table utilisateur existe: {table_exists}")
+        
+        if not table_exists:
+            try:
+                print("[DB INIT] Initialisation de la base de données au premier appel...")
+                init_db()
+                print("[DB INIT] Schéma créé")
+                seed_db()
+                print("[DB INIT] Données de test insérées")
+                
+                # Vérifier les utilisateurs (on est déjà dans le contexte HTTP)
+                try:
+                    count_result = query("SELECT COUNT(*) as cnt FROM utilisateur").fetchone()
+                    print(f"[DB INIT] Nombre d'utilisateurs: {count_result['cnt']}")
+                except Exception as count_err:
+                    print(f"[DB INIT] Erreur lors du comptage: {count_err}")
+                    
+            except Exception as e:
+                import traceback
+                print(f"[DB ERROR] Erreur lors de l'initialisation: {e}")
+                print(traceback.format_exc())
+            finally:
+                _db_initialized = True
+        else:
             _db_initialized = True
 
 
@@ -298,7 +341,10 @@ def auth_login():
         email = request.form.get("email", "").strip().lower()
         pwd   = request.form.get("password", "")
 
+        print(f"[LOGIN] Tentative de connexion avec email: {email}")
+
         if not email or not pwd:
+            print(f"[LOGIN] Email ou mot de passe vide")
             flash("Email et mot de passe requis.", "error")
             return render_template("login.html")
 
@@ -307,16 +353,24 @@ def auth_login():
             (email,)
         ).fetchone()
 
+        print(f"[LOGIN] Utilisateur trouvé: {user is not None}")
+        if user:
+            print(f"[LOGIN] Actif: {user['actif']}, Rôle: {user['role']}")
+
         pwd_ok = user and bcrypt.checkpw(pwd.encode(), user["mot_de_passe"].encode())
+        print(f"[LOGIN] Mot de passe correct: {pwd_ok}")
 
         if not pwd_ok:
+            print(f"[LOGIN] Identifiants invalides")
             flash("Email ou mot de passe incorrect.", "error")
             return render_template("login.html")
 
         if not user["actif"]:
+            print(f"[LOGIN] Compte inactif")
             flash("Votre compte est en attente de validation par l'administrateur.", "warning")
             return render_template("login.html")
 
+        print(f"[LOGIN] Connexion réussie pour {user['prenom']} {user['nom']}")
         session.clear()
         session["user_id"] = user["id"]
         session["role"]    = user["role"]
