@@ -291,6 +291,41 @@ def initialize_db():
 # ROUTES — AUTH
 # ─────────────────────────────────────────────
 
+@app.route("/debug")
+def debug():
+    """Endpoint de debug pour vérifier l'état de la base de données."""
+    try:
+        info = {}
+        info["_db_initialized"] = _db_initialized
+        info["_table_exists"] = _table_exists()
+        
+        # Compter les utilisateurs
+        try:
+            count = query("SELECT COUNT(*) as cnt FROM utilisateur").fetchone()
+            info["user_count"] = count['cnt']
+        except Exception as e:
+            info["user_count_error"] = str(e)
+        
+        # Lister les utilisateurs
+        try:
+            users = query("SELECT id, email, role, actif FROM utilisateur").fetchall()
+            info["users"] = [dict(u) for u in users]
+        except Exception as e:
+            info["users_error"] = str(e)
+        
+        return {
+            "status": "ok",
+            "db_type": getattr(g, "_db_type", "unknown"),
+            "info": info
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
 @app.route("/")
 def index():
     return render_template("index.html")
