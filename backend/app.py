@@ -10,7 +10,7 @@ from flask import (
 )
 
 from config import Config
-
+DATABASE_URL = os.environ.get("DATABASE_URL")
 app = Flask(__name__)
 app.config.from_object(Config)
 
