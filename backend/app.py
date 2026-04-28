@@ -101,9 +101,20 @@ def query(sql, params=()):
     db = get_db()
     if getattr(g, "_db_type", "sqlite") == "postgres":
         sql = sql.replace("?", "%s")
-        cur = db.cursor()
-        cur.execute(sql, params)
-        return cur
+        try:
+            cur = db.cursor()
+            cur.execute(sql, params)
+            return cur
+        except Exception as e:
+            # Si la transaction est aborted, rollback et retry
+            if "current transaction is aborted" in str(e):
+                print("[DB] Transaction aborted, rolling back...")
+                db.rollback()
+                cur = db.cursor()
+                cur.execute(sql, params)
+                return cur
+            else:
+                raise
     else:
         return db.execute(sql, params)
 
@@ -113,9 +124,19 @@ def query_many(sql, params_list):
     db = get_db()
     if getattr(g, "_db_type", "sqlite") == "postgres":
         sql = sql.replace("?", "%s")
-        cur = db.cursor()
-        cur.executemany(sql, params_list)
-        return cur
+        try:
+            cur = db.cursor()
+            cur.executemany(sql, params_list)
+            return cur
+        except Exception as e:
+            if "current transaction is aborted" in str(e):
+                print("[DB] Transaction aborted in executemany, rolling back...")
+                db.rollback()
+                cur = db.cursor()
+                cur.executemany(sql, params_list)
+                return cur
+            else:
+                raise
     else:
         return db.executemany(sql, params_list)
 
