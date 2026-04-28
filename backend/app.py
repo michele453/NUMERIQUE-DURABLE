@@ -733,7 +733,7 @@ def quiz_list():
            JOIN utilisateur u ON u.id = q.id_createur
            LEFT JOIN question qst ON qst.id_quiz = q.id
            WHERE q.statut = 'actif'
-           GROUP BY q.id
+           GROUP BY q.id, q.titre, q.description, u.prenom, u.nom
            ORDER BY q.date_creation DESC
            LIMIT ? OFFSET ?""",
         (PER_PAGE, offset)
