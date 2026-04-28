@@ -269,22 +269,27 @@ def initialize_db():
                 print("[DB INIT] Schéma créé")
                 seed_db()
                 print("[DB INIT] Données de test insérées")
-                
-                # Vérifier les utilisateurs (on est déjà dans le contexte HTTP)
-                try:
-                    count_result = query("SELECT COUNT(*) as cnt FROM utilisateur").fetchone()
-                    print(f"[DB INIT] Nombre d'utilisateurs: {count_result['cnt']}")
-                except Exception as count_err:
-                    print(f"[DB INIT] Erreur lors du comptage: {count_err}")
-                    
             except Exception as e:
                 import traceback
                 print(f"[DB ERROR] Erreur lors de l'initialisation: {e}")
                 print(traceback.format_exc())
-            finally:
-                _db_initialized = True
         else:
-            _db_initialized = True
+            # La table existe, vérifier si elle a des données
+            try:
+                count_result = query("SELECT COUNT(*) as cnt FROM utilisateur").fetchone()
+                user_count = count_result['cnt']
+                print(f"[DB CHECK] Nombre d'utilisateurs: {user_count}")
+                
+                if user_count == 0:
+                    print("[DB INIT] Table vide, insertion des données de test...")
+                    seed_db()
+                    print("[DB INIT] Données de test insérées")
+            except Exception as e:
+                import traceback
+                print(f"[DB ERROR] Erreur lors de la vérification du contenu: {e}")
+                print(traceback.format_exc())
+        
+        _db_initialized = True
 
 
 # ─────────────────────────────────────────────
