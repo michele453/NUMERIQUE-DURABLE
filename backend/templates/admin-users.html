@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Utilisateurs{% endblock %}
+
+{% block content %}
+
+  <div class="flex-between mb-3">
+    <div>
+      <h1>Gestion des utilisateurs</h1>
+      <p class="text-soft text-small">Administration · Page {{ page }}</p>
+    </div>
+    <a href="{{ url_for('admin_user_create') }}" class="btn btn-primary">+ Ajouter</a>
+  </div>
+
+  <!-- Recherche + filtre -->
+  <form method="GET" action="{{ url_for('admin_users') }}"
+        class="flex flex-gap mb-2" style="flex-wrap:wrap;">
+    <input type="search" name="q" value="{{ search }}"
+           placeholder="Chercher par nom ou email..."
+           style="flex:1;min-width:200px;" aria-label="Rechercher un utilisateur">
+    <select name="role" style="width:auto;" aria-label="Filtrer par rôle">
+      <option value="">Tous les rôles</option>
+      <option value="etudiant"   {% if role_f=='etudiant'   %}selected{% endif %}>Étudiant</option>
+      <option value="enseignant" {% if role_f=='enseignant' %}selected{% endif %}>Enseignant</option>
+      <option value="admin"      {% if role_f=='admin'      %}selected{% endif %}>Admin</option>
+    </select>
+    <button type="submit" class="btn btn-outline btn-sm">Filtrer</button>
+  </form>
+
+  <!-- Tableau -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table aria-label="Liste des utilisateurs">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Email</th>
+          <th>Rôle</th>
+          <th>Statut</th>
+          <th>Inscription</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.nom }} {{ u.prenom }}</td>
+          <td>{{ u.email }}</td>
+          <td>
+            {% if u.role == 'admin' %}
+              <span class="badge badge-green">Admin</span>
+            {% elif u.role == 'enseignant' %}
+              <span class="badge badge-orange">Enseignant</span>
+            {% else %}
+              <span class="badge badge-gray">Étudiant</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if u.actif %}
+              <span class="badge badge-green">Actif</span>
+            {% else %}
+              <span class="badge badge-orange">En attente</span>
+            {% endif %}
+          </td>
+          <td>{{ u.date_creation }}</td>
+          <td class="flex flex-gap" style="gap:.4rem;">
+            {% if u.role != 'admin' %}
+              <form method="POST"
+                    action="{{ url_for('admin_user_toggle', user_id=u.id) }}"
+                    style="display:inline;">
+                <button type="submit" class="btn btn-outline btn-sm">
+                  {% if u.actif %}Désactiver{% else %}Activer{% endif %}
+                </button>
+              </form>
+              <a href="{{ url_for('admin_user_edit', user_id=u.id) }}"
+                 class="btn btn-ghost btn-sm">Modifier</a>
+              <form method="POST"
+                    action="{{ url_for('admin_user_delete', user_id=u.id) }}"
+                    style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm"
+                        onclick="return confirm('Supprimer {{ u.prenom }} {{ u.nom }} ? Cette action est irréversible.')">
+                  Supprimer
+                </button>
+              </form>
+            {% else %}
+              <span class="text-soft text-small">— compte protégé</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center text-soft" style="padding:2rem;">
+            Aucun utilisateur trouvé.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if users|length == 20 or page > 1 %}
+  <nav class="pagination" aria-label="Pagination utilisateurs">
+    {% if page > 1 %}
+      <a href="{{ url_for('admin_users', page=page-1, role=role_f, q=search) }}">← Précédent</a>
+    {% endif %}
+    <span class="current">{{ page }}</span>
+    {% if users|length == 20 %}
+      <a href="{{ url_for('admin_users', page=page+1, role=role_f, q=search) }}">Suivant →</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+{% endblock %}

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{% block description %}Plateforme d'évaluation sobre & éco-conçue{% endblock %}">
+  <title>{% block title %}EvalConnect{% endblock %} — EvalConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav aria-label="Navigation principale">
+    <div class="nav-inner">
+      <a href="{{ url_for('index') }}" class="nav-logo">Eval<span>Connect</span></a>
+      <ul class="nav-links">
+        {% if current_user %}
+          {% if current_user.role == 'etudiant' %}
+            <li><a href="{{ url_for('quiz_list') }}"  {% if request.endpoint == 'quiz_list'  %}class="active"{% endif %}>Quiz</a></li>
+            <li><a href="{{ url_for('scores') }}"     {% if request.endpoint == 'scores'     %}class="active"{% endif %}>Mes scores</a></li>
+          {% elif current_user.role == 'enseignant' %}
+            <li><a href="{{ url_for('dashboard') }}"  {% if request.endpoint == 'dashboard'  %}class="active"{% endif %}>Mes quiz</a></li>
+            <li><a href="{{ url_for('quiz_create') }}" {% if request.endpoint == 'quiz_create'%}class="active"{% endif %}>Nouveau quiz</a></li>
+            <li><a href="{{ url_for('scores') }}"     {% if request.endpoint == 'scores'     %}class="active"{% endif %}>Scores</a></li>
+          {% elif current_user.role == 'admin' %}
+            <li><a href="{{ url_for('dashboard') }}"   {% if request.endpoint == 'dashboard'   %}class="active"{% endif %}>Quiz</a></li>
+            <li><a href="{{ url_for('admin_users') }}" {% if request.endpoint == 'admin_users' %}class="active"{% endif %}>Utilisateurs</a></li>
+            <li><a href="{{ url_for('scores') }}"      {% if request.endpoint == 'scores'      %}class="active"{% endif %}>Scores</a></li>
+          {% endif %}
+          <li><a href="{{ url_for('auth_logout') }}">Déconnexion</a></li>
+        {% else %}
+          <li><a href="{{ url_for('index') }}"        {% if request.endpoint == 'index'       %}class="active"{% endif %}>Accueil</a></li>
+          <li><a href="{{ url_for('auth_login') }}"   {% if request.endpoint == 'auth_login'  %}class="active"{% endif %}>Connexion</a></li>
+          <li><a href="{{ url_for('auth_register') }}"{% if request.endpoint == 'auth_register'%}class="active"{% endif %}>Inscription</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Messages flash -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container" style="padding-top:.75rem;">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}" role="alert">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Contenu principal -->
+  <main>
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span>© EvalConnect 2026 — Hébergé sobrement</span>
+      <span class="text-small">Aucune donnée transmise à des tiers · Zéro publicité</span>
+    </div>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Connexion à EvalConnect">
+  <title>Connexion — EvalConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <nav aria-label="Navigation principale">
+    <div class="nav-inner">
+      <a href="{{ url_for('index') }}" class="nav-logo">Eval<span>Connect</span></a>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('index') }}">Accueil</a></li>
+        <li><a href="{{ url_for('auth_login') }}" class="active">Connexion</a></li>
+        <li><a href="{{ url_for('auth_register') }}">Inscription</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <div style="max-width:420px; margin:2rem auto;">
+
+        <h1 class="mb-2">Connexion</h1>
+
+        <!-- Message d'erreur (affiché par Flask via Jinja2) -->
+        <!-- {% if error %} -->
+        <!-- <div class="alert alert-error" role="alert">{{ error }}</div> -->
+        <!-- {% endif %} -->
+
+        <!-- Exemple d'erreur visible pour la démo statique -->
+        <div class="alert alert-error hidden" id="login-error" role="alert">
+          Email ou mot de passe incorrect.
+        </div>
+
+        <div class="card">
+          <!--
+            En Flask : <form method="POST" action="/auth/login">
+            Ici version statique avec action fictive
+          -->
+          <form id="login-form" action="/auth/login" method="POST" novalidate>
+
+            <!-- Protection CSRF — token injecté par Flask -->
+            {# <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> #}
+
+            <div class="form-group">
+              <label for="email">Adresse email</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                autocomplete="email"
+                placeholder="prenom.nom@exemple.fr"
+                aria-required="true"
+              >
+              <span class="form-error hidden" id="email-error">Email invalide.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="password">Mot de passe</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                autocomplete="current-password"
+                minlength="8"
+                aria-required="true"
+              >
+              <span class="form-error hidden" id="pass-error">Mot de passe requis.</span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full">Se connecter</button>
+
+          </form>
+        </div>
+
+        <p class="text-center text-soft text-small mt-2">
+          Pas encore de compte ? <a href="{{ url_for('auth_register') }}">Créer un compte</a>
+        </p>
+
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span>© EvalConnect 2026</span>
+    </div>
+  </footer>
+
+  <!-- Validation côté client légère — < 30 lignes -->
+  <script src="{{ url_for('static', filename='js/form-validation.js') }}" defer></script>
+
+</body>
+</html>

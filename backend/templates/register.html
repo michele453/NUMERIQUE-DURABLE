@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Créer un compte EvalConnect">
+  <title>Inscription — EvalConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <nav aria-label="Navigation principale">
+    <div class="nav-inner">
+      <a href="{{ url_for('index') }}" class="nav-logo">Eval<span>Connect</span></a>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('index') }}">Accueil</a></li>
+        <li><a href="{{ url_for('auth_login') }}">Connexion</a></li>
+        <li><a href="{{ url_for('auth_register') }}" class="active">Inscription</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+      <div style="max-width:480px; margin:2rem auto;">
+
+        <h1 class="mb-2">Créer un compte</h1>
+
+        <div class="card">
+          <form id="register-form" action="/auth/register" method="POST" novalidate>
+
+            {# <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> #}
+
+            <div class="options-grid mb-2" style="grid-template-columns:1fr 1fr;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label for="nom">Nom</label>
+                <input type="text" id="nom" name="nom" required autocomplete="family-name" placeholder="Dupont" aria-required="true">
+                <span class="form-error hidden" id="nom-error">Nom requis.</span>
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label for="prenom">Prénom</label>
+                <input type="text" id="prenom" name="prenom" required autocomplete="given-name" placeholder="Marie" aria-required="true">
+                <span class="form-error hidden" id="prenom-error">Prénom requis.</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Adresse email</label>
+              <input type="email" id="email" name="email" required autocomplete="email" placeholder="marie.dupont@exemple.fr" aria-required="true">
+              <span class="form-error hidden" id="email-error">Email invalide ou déjà utilisé.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="role">Rôle</label>
+              <select id="role" name="role" required aria-required="true">
+                <option value="">-- Choisir --</option>
+                <option value="etudiant">Étudiant</option>
+                <option value="enseignant">Enseignant</option>
+              </select>
+              <span class="form-hint">Le rôle Administrateur est attribué manuellement.</span>
+            </div>
+
+            <div class="form-group">
+              <label for="password">Mot de passe</label>
+              <input type="password" id="password" name="password" required autocomplete="new-password" minlength="8" aria-required="true" aria-describedby="pass-hint">
+              <span class="form-hint" id="pass-hint">8 caractères minimum.</span>
+              <span class="form-error hidden" id="pass-error">Mot de passe trop court (min. 8 caractères).</span>
+            </div>
+
+            <div class="form-group">
+              <label for="password2">Confirmer le mot de passe</label>
+              <input type="password" id="password2" name="password2" required autocomplete="new-password" aria-required="true">
+              <span class="form-error hidden" id="pass2-error">Les mots de passe ne correspondent pas.</span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full">Créer mon compte</button>
+
+          </form>
+        </div>
+
+        <p class="text-center text-soft text-small mt-2">
+          Déjà un compte ? <a href="{{ url_for('auth_login') }}">Se connecter</a>
+        </p>
+
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span>© EvalConnect 2026</span>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/form-validation.js') }}" defer></script>
+
+</body>
+</html>

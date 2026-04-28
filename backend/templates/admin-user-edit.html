@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Modifier un utilisateur{% endblock %}
+
+{% block content %}
+  <h1>Modifier l'utilisateur</h1>
+  <form action="{{ url_for('admin_user_edit', user_id=user['id']) }}" method="POST" novalidate>
+    <div class="card mb-3">
+      <div class="form-group">
+        <label for="nom">Nom</label>
+        <input id="nom" name="nom" type="text" required value="{{ user['nom'] }}">
+      </div>
+      <div class="form-group">
+        <label for="prenom">Prénom</label>
+        <input id="prenom" name="prenom" type="text" required value="{{ user['prenom'] }}">
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required value="{{ user['email'] }}">
+      </div>
+      <div class="form-group">
+        <label for="role">Rôle</label>
+        <select id="role" name="role" required>
+          <option value="etudiant" {% if user['role'] == 'etudiant' %}selected{% endif %}>Étudiant</option>
+          <option value="enseignant" {% if user['role'] == 'enseignant' %}selected{% endif %}>Enseignant</option>
+          <option value="admin" {% if user['role'] == 'admin' %}selected{% endif %}>Admin</option>
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+    <a href="{{ url_for('admin_users') }}" class="btn btn-ghost">Retour</a>
+  </form>
+{% endblock %}

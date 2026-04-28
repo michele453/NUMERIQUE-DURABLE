@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Éditer classe{% endblock %}
+
+{% block content %}
+
+<h1>Éditer : {{ classe.nom }}</h1>
+
+<form method="POST" class="form-layout" style="max-width: 600px;">
+  <div class="form-group">
+    <label for="nom">Nom de la classe *</label>
+    <input type="text" id="nom" name="nom" required value="{{ classe.nom }}"
+           placeholder="ex: Informatique L1" aria-label="Nom de la classe">
+  </div>
+
+  <div class="form-group">
+    <label for="description">Description</label>
+    <textarea id="description" name="description" rows="4"
+              placeholder="Description optionnelle..." aria-label="Description de la classe">{{ classe.description or '' }}</textarea>
+  </div>
+
+  <div class="flex flex-gap">
+    <button type="submit" class="btn btn-primary">Mettre à jour</button>
+    <a href="{{ url_for('classes_list') }}" class="btn btn-outline">Annuler</a>
+  </div>
+</form>
+
+{% endblock %}

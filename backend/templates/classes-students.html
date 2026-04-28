@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Gérer les étudiants{% endblock %}
+
+{% block content %}
+
+<div style="margin-bottom: 2rem;">
+  <a href="{{ url_for('classes_list') }}" class="text-soft">← Retour aux classes</a>
+  <h1>{{ classe.nom }} — Gestion des étudiants</h1>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+  
+  <!-- Étudiants dans la classe -->
+  <div class="card" style="padding: 0; overflow: hidden;">
+    <div style="padding: 1.5rem; background: var(--neutral-100); border-bottom: 1px solid var(--border-color);">
+      <h3 style="margin: 0;">Étudiants inscrits</h3>
+    </div>
+    {% if students %}
+      <div style="max-height: 500px; overflow-y: auto;">
+        {% for student in students %}
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-color);">
+            <div>
+              <strong>{{ student.prenom }} {{ student.nom }}</strong>
+              <br>
+              <span class="text-small text-muted">{{ student.email }}</span>
+            </div>
+            <form method="POST" action="{{ url_for('classes_remove_student', class_id=classe.id, student_id=student.id) }}" style="display: inline;">
+              <button type="submit" class="btn btn-ghost btn-sm" onclick="return confirm('Retirer cet étudiant ?')">✕</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="padding: 1.5rem; text-align: center; color: var(--text-muted);">Aucun étudiant</p>
+    {% endif %}
+  </div>
+
+  <!-- Ajouter des étudiants -->
+  <div class="card">
+    <h3 style="margin-top: 0;">Ajouter des étudiants</h3>
+    {% if all_students %}
+      <form method="POST" action="{{ url_for('classes_add_student', class_id=classe.id) }}">
+        <div class="form-group">
+          <label for="student_id">Sélectionner un étudiant</label>
+          <select id="student_id" name="student_id" required aria-label="Choisir un étudiant">
+            <option value="">-- Choisir --</option>
+            {% for student in all_students %}
+              <option value="{{ student.id }}">{{ student.prenom }} {{ student.nom }} ({{ student.email }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Ajouter</button>
+      </form>
+    {% else %}
+      <p class="text-muted">Tous les étudiants sont déjà inscrits.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}

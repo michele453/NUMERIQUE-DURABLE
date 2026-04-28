@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Modifier le quiz{% endblock %}
+
+{% block content %}
+  <h1>Modifier le quiz</h1>
+  <form action="{{ url_for('quiz_edit', quiz_id=quiz['id']) }}" method="POST" novalidate>
+    <div class="card mb-3">
+      <div class="card-header"><h2>Informations générales</h2></div>
+      <div class="form-group">
+        <label for="titre">Titre</label>
+        <input id="titre" name="titre" type="text" required maxlength="100" value="{{ quiz['titre'] }}">
+      </div>
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea id="description" name="description" maxlength="500">{{ quiz['description'] }}</textarea>
+      </div>
+      <div class="form-group">
+        <label for="statut">Statut</label>
+        <select id="statut" name="statut">
+          <option value="actif" {% if quiz['statut'] == 'actif' %}selected{% endif %}>Actif</option>
+          <option value="archive" {% if quiz['statut'] == 'archive' %}selected{% endif %}>Archivé</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card mb-3">
+      <div class="card-header"><h2>Questions</h2></div>
+      {% for question in questions %}
+        <div class="form-group">
+          <label>Question {{ loop.index }}</label>
+          <input type="text" value="{{ question['texte'] }}" disabled>
+          <small>Options et bonne réponse non modifiables ici.</small>
+        </div>
+      {% endfor %}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Mettre à jour</button>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">Retour</a>
+  </form>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Quiz disponibles{% endblock %}
+
+{% block content %}
+  <h1>Quiz disponibles</h1>
+  {% if quizzes %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Titre</th>
+          <th>Description</th>
+          <th>Créateur</th>
+          <th>Questions</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for quiz in quizzes %}
+        <tr>
+          <td>{{ quiz['titre'] }}</td>
+          <td>{{ quiz['description'] }}</td>
+          <td>{{ quiz['createur'] }}</td>
+          <td>{{ quiz['nb_questions'] }}</td>
+          <td><a href="{{ url_for('quiz_take', quiz_id=quiz['id']) }}" class="btn btn-sm btn-primary">Passer</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="alert alert-info">Aucun quiz actif n'est disponible pour le moment.</div>
+  {% endif %}
+{% endblock %}

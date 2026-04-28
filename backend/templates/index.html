@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Accueil{% endblock %}
+{% block description %}EvalConnect — Plateforme d'évaluation sobre et éco-conçue pour enseignants et étudiants.{% endblock %}
+
+{% block content %}
+
+  <!-- Hero -->
+  <section class="hero" aria-labelledby="hero-title">
+    <h1 id="hero-title">Évaluations sobres &amp; efficaces</h1>
+    <p>Créez et passez vos quiz sans surcharge technique, sans données envoyées vers des serveurs tiers.</p>
+    <div class="hero-actions">
+      {% if current_user %}
+        {% if current_user.role == 'etudiant' %}
+          <a href="{{ url_for('quiz_list') }}" class="btn btn-primary">Voir les quiz</a>
+          <a href="{{ url_for('scores') }}"    class="btn btn-outline">Mes scores</a>
+        {% else %}
+          <a href="{{ url_for('dashboard') }}"  class="btn btn-primary">Mon tableau de bord</a>
+          <a href="{{ url_for('quiz_create') }}" class="btn btn-outline">Créer un quiz</a>
+        {% endif %}
+      {% else %}
+        <a href="{{ url_for('auth_register') }}" class="btn btn-primary">Créer un compte</a>
+        <a href="{{ url_for('auth_login') }}"    class="btn btn-outline">Se connecter</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- Bloc Green IT — US5 -->
+  <article class="green-block mb-3" aria-labelledby="green-title">
+    <h3 id="green-title">Nos engagements éco</h3>
+    <ul class="green-commitments">
+      <li>Pages &lt; 200 Ko</li>
+      <li>Données minimales</li>
+      <li>0 tracking</li>
+      <li>0 cookie tiers</li>
+      <li>Polices système uniquement</li>
+      <li>Hébergement sobre</li>
+    </ul>
+  </article>
+
+  <!-- Features -->
+  <section aria-labelledby="features-title">
+    <h2 id="features-title" class="mb-2">Ce que vous pouvez faire</h2>
+    <div class="features">
+      <article class="feature-card">
+        <h3>Créer un quiz</h3>
+        <p>Composez des évaluations à choix multiples. Activez ou archivez à la demande.</p>
+        <a href="{{ url_for('auth_login') }}" class="btn btn-outline btn-sm mt-2">Commencer →</a>
+      </article>
+      <article class="feature-card">
+        <h3>Passer un quiz</h3>
+        <p>Accédez aux évaluations disponibles et obtenez votre score immédiatement.</p>
+        <a href="{{ url_for('auth_login') }}" class="btn btn-outline btn-sm mt-2">Voir les quiz →</a>
+      </article>
+      <article class="feature-card">
+        <h3>Voir les scores</h3>
+        <p>Enseignants : suivez les résultats par quiz. Étudiants : consultez votre historique.</p>
+        <a href="{{ url_for('auth_login') }}" class="btn btn-outline btn-sm mt-2">Tableau de bord →</a>
+      </article>
+    </div>
+  </section>
+
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Scores{% endblock %}
+{% block description %}Tableau de bord des scores — EvalConnect{% endblock %}
+
+{% block content %}
+<main>
+  <div class="container">
+
+    {% if role == 'etudiant' %}
+      <h1>Mes scores</h1>
+
+      {% if rows %}
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table aria-label="Mes scores">
+            <thead>
+              <tr>
+                <th>Quiz</th>
+                <th>Score</th>
+                <th>Date de passage</th>
+                <th>Résultat</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+                <tr>
+                  <td>{{ row.titre }}</td>
+                  <td><strong>{{ row.score }}/10</strong></td>
+                  <td>{{ row.date_passage[:10] }}</td>
+                  <td>
+                    {% if row.score >= 8 %}
+                      <span class="badge badge-green">Excellent</span>
+                    {% elif row.score >= 6 %}
+                      <span class="badge badge-orange">Bien</span>
+                    {% else %}
+                      <span class="badge badge-gray">Insuffisant</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-center text-muted">Vous n'avez passé aucun quiz pour le moment.</p>
+      {% endif %}
+
+    {% else %}
+      <!-- Enseignant/Admin -->
+      <div class="flex-between mb-3">
+        <h1>Tableau des scores</h1>
+        {% if selected_quiz %}
+          <a href="/quiz/{{ selected_quiz }}/export-csv" class="btn btn-ghost btn-sm">↓ Export CSV</a>
+        {% endif %}
+      </div>
+
+      <!-- Sélecteur de quiz -->
+      {% if my_quizzes %}
+        <div class="form-group" style="max-width:320px; margin-bottom:1.5rem;">
+          <label for="quiz-select">Quiz</label>
+          <select id="quiz-select" onchange="window.location.href='?quiz_id='+this.value" aria-label="Choisir un quiz">
+            {% for quiz in my_quizzes %}
+              <option value="{{ quiz.id }}" {% if quiz.id == selected_quiz %}selected{% endif %}>{{ quiz.titre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      {% endif %}
+
+      {% if stats %}
+        <!-- Statistiques du quiz sélectionné -->
+        <div class="stats-row mb-3">
+          <div class="stat-card">
+            <div class="stat-num">{{ stats.nb }}</div>
+            <div class="stat-lbl">Participants</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">{{ stats.moyenne }}</div>
+            <div class="stat-lbl">Moyenne /10</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">{{ stats.max }}</div>
+            <div class="stat-lbl">Meilleur score</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">{{ stats.min }}</div>
+            <div class="stat-lbl">Score min.</div>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if rows %}
+        <!-- Tableau des scores -->
+        <div class="card" style="padding:0;overflow:hidden;">
+          <table aria-label="Scores du quiz">
+            <thead>
+              <tr>
+                <th>Étudiant</th>
+                <th>Score</th>
+                <th>Date de passage</th>
+                <th>Résultat</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+                <tr>
+                  <td>{{ row.prenom }} {{ row.nom }}</td>
+                  <td><strong>{{ row.score }}/10</strong></td>
+                  <td>{{ row.date_passage[:10] }}</td>
+                  <td>
+                    {% if row.score >= 8 %}
+                      <span class="badge badge-green">Excellent</span>
+                    {% elif row.score >= 6 %}
+                      <span class="badge badge-orange">Bien</span>
+                    {% else %}
+                      <span class="badge badge-gray">Insuffisant</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page > 1 or rows %}
+          <nav class="pagination" aria-label="Pagination scores">
+            {% if page > 1 %}
+              <a href="?page={{ page-1 }}{% if selected_quiz %}&quiz_id={{ selected_quiz }}{% endif %}">← Précédent</a>
+            {% endif %}
+            <span class="current">{{ page }}</span>
+            {% if rows|length == PER_PAGE %}
+              <a href="?page={{ page+1 }}{% if selected_quiz %}&quiz_id={{ selected_quiz }}{% endif %}">{{ page+1 }}</a>
+              <a href="?page={{ page+1 }}{% if selected_quiz %}&quiz_id={{ selected_quiz }}{% endif %}">Suivant →</a>
+            {% endif %}
+          </nav>
+        {% endif %}
+      {% else %}
+        <p class="text-center text-muted">Aucun score pour ce quiz.</p>
+      {% endif %}
+    {% endif %}
+
+  </div>
+</main>
+{% endblock %}

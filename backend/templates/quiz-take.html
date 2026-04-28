@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ quiz.titre }}{% endblock %}
+
+{% block content %}
+<div style="max-width:680px; margin:0 auto;">
+
+  <!-- En-tête quiz avec chronomètre -->
+  <div class="card mb-3">
+    <div class="flex-between" style="align-items: flex-start;">
+      <div style="flex: 1;">
+        <h1>{{ quiz.titre }}</h1>
+        {% if quiz.description %}
+          <p class="text-soft mt-1">{{ quiz.description }}</p>
+        {% endif %}
+        <p class="text-small text-soft mt-1">{{ questions|length }} question(s)</p>
+      </div>
+      <!-- Chronomètre -->
+      <div style="text-align: center; padding: 1rem; background: var(--accent-color); border-radius: 8px; color: white; min-width: 100px;">
+        <div style="font-size: 2rem; font-weight: bold; font-family: monospace;" id="timer">
+          {{ quiz.duree_minutes }}:00
+        </div>
+        <div style="font-size: 0.85rem; margin-top: 0.5rem;">Temps restant</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulaire quiz -->
+  <form method="POST" action="{{ url_for('quiz_submit', quiz_id=quiz.id) }}"
+        id="quiz-form" novalidate>
+
+    {% for q in questions %}
+    <fieldset class="question-block mb-2">
+      <legend><strong>Question {{ loop.index }}</strong> — {{ q.texte }}</legend>
+      <div role="radiogroup" style="display:flex;flex-direction:column;gap:.5rem;" class="mt-1">
+        {% for option in q.options %}
+        <label class="option-row">
+          <input type="radio" name="q[{{ q.id }}]" value="{{ loop.index0 }}" required>
+          {{ option }}
+        </label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    {% endfor %}
+
+    <div class="flex flex-gap">
+      <button type="submit" class="btn btn-primary" id="submit-btn">
+        Soumettre mes réponses
+      </button>
+      <a href="{{ url_for('quiz_list') }}" class="btn btn-ghost">Abandonner</a>
+    </div>
+
+  </form>
+</div>
+
+<script>
+// Chronomètre
+const DUREE_MINUTES = {{ quiz.duree_minutes }};
+const DUREE_SECONDES = DUREE_MINUTES * 60;
+let tempsRestant = DUREE_SECONDES;
+
+function mettreAJourTimer() {
+  const minutes = Math.floor(tempsRestant / 60);
+  const secondes = tempsRestant % 60;
+  const affichage = String(minutes).padStart(2, '0') + ':' + String(secondes).padStart(2, '0');
+  document.getElementById('timer').textContent = affichage;
+
+  // Changer la couleur si temps court
+  const timerDiv = document.getElementById('timer').parentElement;
+  if (tempsRestant <= 60) {
+    timerDiv.style.background = '#d32f2f'; // rouge
+  } else if (tempsRestant <= 300) {
+    timerDiv.style.background = '#f57c00'; // orange
+  }
+
+  if (tempsRestant === 0) {
+    clearInterval(interval);
+    document.getElementById('submit-btn').click();
+  }
+}
+
+const interval = setInterval(() => {
+  tempsRestant--;
+  mettreAJourTimer();
+}, 1000);
+
+// Éviter de quitter la page sans soumettre
+window.addEventListener('beforeunload', (e) => {
+  if (tempsRestant > 0) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+</script>
+
+{% endblock %}

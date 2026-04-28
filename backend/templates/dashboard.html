@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+
+{% block content %}
+
+  <div class="flex-between mb-3">
+    <div>
+      <h1>Mes évaluations</h1>
+      <p class="text-soft">Bonjour, {{ current_user.prenom }}</p>
+    </div>
+    <a href="{{ url_for('quiz_create') }}" class="btn btn-primary">+ Nouveau quiz</a>
+  </div>
+
+  <!-- Statistiques -->
+  <div class="stats-row mb-3">
+    <div class="stat-card">
+      <div class="stat-num">{{ stats.actifs or 0 }}</div>
+      <div class="stat-lbl">Quiz actifs</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{{ stats.total_participations or 0 }}</div>
+      <div class="stat-lbl">Participations</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{{ stats.score_moyen or '—' }}</div>
+      <div class="stat-lbl">Score moyen /10</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{{ stats.archives or 0 }}</div>
+      <div class="stat-lbl">Quiz archivés</div>
+    </div>
+  </div>
+
+  <!-- Filtre statut -->
+  <form method="GET" action="{{ url_for('dashboard') }}" class="flex flex-gap mb-2">
+    <label for="filter-statut" class="text-soft text-small" style="align-self:center;">Statut :</label>
+    <select id="filter-statut" name="statut" class="btn btn-ghost btn-sm"
+            style="width:auto;" onchange="this.form.submit()">
+      <option value="all"    {% if statut=='all'    %}selected{% endif %}>Tous</option>
+      <option value="actif"  {% if statut=='actif'  %}selected{% endif %}>Actifs</option>
+      <option value="archive"{% if statut=='archive'%}selected{% endif %}>Archivés</option>
+    </select>
+  </form>
+
+  <!-- Tableau des quiz -->
+  <div class="card" style="padding:0;overflow:hidden;">
+    <table aria-label="Liste de vos quiz">
+      <thead>
+        <tr>
+          <th>Titre</th>
+          <th>Questions</th>
+          <th>Participations</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for q in quiz_list %}
+        <tr>
+          <td><a href="{{ url_for('quiz_edit', quiz_id=q.id) }}">{{ q.titre }}</a></td>
+          <td>{{ q.nb_questions }}</td>
+          <td>{{ q.nb_participations }}</td>
+          <td>
+            {% if q.statut == 'actif' %}
+              <span class="badge badge-green">Actif</span>
+            {% else %}
+              <span class="badge badge-gray">Archivé</span>
+            {% endif %}
+          </td>
+          <td class="flex flex-gap" style="gap:.4rem;">
+            <a href="{{ url_for('quiz_edit', quiz_id=q.id) }}" class="btn btn-ghost btn-sm">Modifier</a>
+            <a href="{{ url_for('scores') }}?quiz_id={{ q.id }}" class="btn btn-ghost btn-sm">Scores</a>
+            {% if q.statut == 'actif' %}
+              <form method="POST" action="{{ url_for('quiz_archive', quiz_id=q.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-ghost btn-sm"
+                        onclick="return confirm('Archiver ce quiz ?')">Archiver</button>
+              </form>
+            {% else %}
+              <form method="POST" action="{{ url_for('quiz_activate', quiz_id=q.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-ghost btn-sm">Réactiver</button>
+              </form>
+              <form method="POST" action="{{ url_for('quiz_delete', quiz_id=q.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm"
+                        onclick="return confirm('Supprimer définitivement ?')">Supprimer</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-soft" style="padding:2rem;">
+            Aucun quiz trouvé.
+            <a href="{{ url_for('quiz_create') }}">Créer votre premier quiz →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if quiz_list|length == 20 or page > 1 %}
+  <nav class="pagination" aria-label="Pagination des quiz">
+    {% if page > 1 %}
+      <a href="{{ url_for('dashboard', page=page-1, statut=statut) }}">← Précédent</a>
+    {% endif %}
+    <span class="current">{{ page }}</span>
+    {% if quiz_list|length == 20 %}
+      <a href="{{ url_for('dashboard', page=page+1, statut=statut) }}">Suivant →</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+{% endblock %}
