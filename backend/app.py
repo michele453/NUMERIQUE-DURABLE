@@ -332,6 +332,34 @@ def debug():
         }
 
 
+@app.route("/force-seed")
+def force_seed():
+    """Force l'insertion des données de test."""
+    try:
+        print("[FORCE SEED] Insertion forcée des données de test...")
+        seed_db()
+        
+        # Vérifier après insertion
+        count = query("SELECT COUNT(*) as cnt FROM utilisateur").fetchone()
+        users = query("SELECT id, email, role, actif FROM utilisateur").fetchall()
+        
+        return {
+            "status": "ok",
+            "message": "Seed forcé terminé",
+            "user_count": count['cnt'],
+            "users": [dict(u) for u in users]
+        }
+    except Exception as e:
+        import traceback
+        print(f"[FORCE SEED ERROR] {e}")
+        print(traceback.format_exc())
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
 @app.route("/force-init")
 def force_init():
     """Force l'initialisation de la base de données."""
