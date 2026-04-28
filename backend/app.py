@@ -16,10 +16,46 @@ app.config.from_object(Config)
 
 PER_PAGE = app.config["PER_PAGE"]
 
+# Flag pour initialiser la DB une seule fois
+_db_initialized = False
+
 
 # ─────────────────────────────────────────────
 # BASE DE DONNÉES : SQLite (local) ou PostgreSQL (Render)
 # ─────────────────────────────────────────────
+
+def _table_exists():
+    """Vérifie si la table utilisateur existe."""
+    try:
+        if DATABASE_URL:
+            import psycopg2
+            conn = psycopg2.connect(DATABASE_URL)
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'utilisateur'
+                );
+            """)
+            result = cur.fetchone()[0]
+            cur.close()
+            conn.close()
+            return result
+        else:
+            import sqlite3
+            db_path = app.config["DATABASE"]
+            if not os.path.exists(db_path):
+                return False
+            conn = sqlite3.connect(db_path)
+            cur = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='utilisateur'"
+            )
+            result = cur.fetchone() is not None
+            conn.close()
+            return result
+    except Exception:
+        return False
+
 
 def get_db():
     """Retourne la connexion BDD pour la requête en cours."""
@@ -140,41 +176,10 @@ def seed_db():
 
 
 def ensure_db_initialized():
-    """Vérifie et initialise la base de données si nécessaire."""
-    try:
-        with app.app_context():
-            db = get_db()
-            
-            # Vérifier si la table utilisateur existe
-            if getattr(g, "_db_type", "sqlite") == "postgres":
-                cur = db.cursor()
-                cur.execute("""
-                    SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
-                        WHERE table_name = 'utilisateur'
-                    );
-                """)
-                table_exists = cur.fetchone()[0]
-            else:
-                cur = db.execute(
-                    "SELECT name FROM sqlite_master WHERE type='table' AND name='utilisateur'"
-                )
-                table_exists = cur.fetchone() is not None
-            
-            # Initialiser si nécessaire
-            if not table_exists:
-                print("Initialisation de la base de données...")
-                init_db()
-                seed_db()
-                print("Base de données initialisée avec succès.")
-    except Exception as e:
-        print(f"Erreur lors de la vérification de la base: {e}")
-
-
-@app.before_serving
-def startup():
-    """Exécuté au démarrage de l'application."""
-    ensure_db_initialized()
+    """Initialise manuellement la base de données (via CLI)."""
+    with app.app_context():
+        init_db()
+        seed_db()
 
 
 # ─────────────────────────────────────────────
@@ -216,6 +221,27 @@ def get_current_user():
 @app.context_processor
 def inject_user():
     return {"current_user": get_current_user()}
+
+
+# ─────────────────────────────────────────────
+# INITIALISATION AU DÉMARRAGE
+# ─────────────────────────────────────────────
+
+@app.before_request
+def initialize_db():
+    """Initialise la base de données au premier appel HTTP si nécessaire."""
+    global _db_initialized
+    
+    if not _db_initialized and not _table_exists():
+        try:
+            print("Initialisation de la base de données au premier appel...")
+            init_db()
+            seed_db()
+            print("Base de données initialisée avec succès.")
+        except Exception as e:
+            print(f"Erreur lors de l'initialisation de la base: {e}")
+        finally:
+            _db_initialized = True
 
 
 # ─────────────────────────────────────────────
