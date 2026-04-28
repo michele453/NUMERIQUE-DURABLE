@@ -2,5 +2,5 @@ services:
   - type: web
     name: evalconnect
     env: python
-    buildCommand: pip install -r requirements.txt && python -m flask --app backend.app init-db && python -m flask --app backend.app seed-db
+    buildCommand: pip install -r requirements.txt
     startCommand: gunicorn backend.app:app

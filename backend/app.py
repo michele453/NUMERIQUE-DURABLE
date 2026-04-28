@@ -119,6 +119,12 @@ def init_db_command():
 
 @app.cli.command("seed-db")
 def seed_db_command():
+    seed_db()
+    print("Données de test insérées.")
+
+
+def seed_db():
+    """Insère les données de test dans la base de données."""
     db = get_db()
     seed_path = os.path.join(os.path.dirname(__file__), "..", "database", "seed.sql")
     with open(seed_path, "r", encoding="utf-8") as f:
@@ -131,7 +137,44 @@ def seed_db_command():
     else:
         db.executescript(sql)
         db.commit()
-    print("Données de test insérées.")
+
+
+def ensure_db_initialized():
+    """Vérifie et initialise la base de données si nécessaire."""
+    try:
+        with app.app_context():
+            db = get_db()
+            
+            # Vérifier si la table utilisateur existe
+            if getattr(g, "_db_type", "sqlite") == "postgres":
+                cur = db.cursor()
+                cur.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_name = 'utilisateur'
+                    );
+                """)
+                table_exists = cur.fetchone()[0]
+            else:
+                cur = db.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='utilisateur'"
+                )
+                table_exists = cur.fetchone() is not None
+            
+            # Initialiser si nécessaire
+            if not table_exists:
+                print("Initialisation de la base de données...")
+                init_db()
+                seed_db()
+                print("Base de données initialisée avec succès.")
+    except Exception as e:
+        print(f"Erreur lors de la vérification de la base: {e}")
+
+
+@app.before_serving
+def startup():
+    """Exécuté au démarrage de l'application."""
+    ensure_db_initialized()
 
 
 # ─────────────────────────────────────────────
