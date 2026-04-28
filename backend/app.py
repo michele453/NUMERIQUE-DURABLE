@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 PER_PAGE = app.config["PER_PAGE"]
-DATABASE_URL = os.environ.get("DATABASE_URL")
+
 
 # ─────────────────────────────────────────────
 # BASE DE DONNÉES : SQLite (local) ou PostgreSQL (Render)
