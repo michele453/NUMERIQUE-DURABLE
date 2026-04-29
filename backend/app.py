@@ -666,25 +666,11 @@ def quiz_create():
 
         # INSERT avec récupération de l'ID (compatible SQLite et PostgreSQL)
         try:
-            if getattr(g, "_db_type", "sqlite") == "postgres":
-                # Pour PostgreSQL, s'assurer que la séquence est correcte
-                query("SELECT setval('quiz_id_seq', COALESCE((SELECT MAX(id) FROM quiz), 0) + 1, false)")
-                
-                cur = query(
-                    "INSERT INTO quiz (titre, description, duree_minutes, statut, id_createur) VALUES (%s,%s,%s,%s,%s) RETURNING id",
-                    (titre, description, duree, statut, session["user_id"])
-                )
-                result = cur.fetchone()
-                if not result:
-                    flash("Erreur lors de la création du quiz (insertion échouée).", "error")
-                    return render_template("quiz-create.html")
-                quiz_id = result["id"]
-            else:
-                cur = query(
-                    "INSERT INTO quiz (titre, description, duree_minutes, statut, id_createur) VALUES (?,?,?,?,?)",
-                    (titre, description, duree, statut, session["user_id"])
-                )
-                quiz_id = cur.lastrowid
+            cur = query(
+                "INSERT INTO quiz (titre, description, duree_minutes, statut, id_createur) VALUES (?,?,?,?,?) RETURNING id",
+                (titre, description, duree, statut, session["user_id"])
+            )
+            quiz_id = last_insert_id(cur)
 
             if not quiz_id or quiz_id <= 0:
                 flash(f"Erreur lors de la création du quiz (ID invalide: {quiz_id}).", "error")
