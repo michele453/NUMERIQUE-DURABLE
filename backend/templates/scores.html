@@ -26,7 +26,7 @@
                 <tr>
                   <td>{{ row.titre }}</td>
                   <td><strong>{{ row.score }}/10</strong></td>
-                  <td>{{ row.date_passage|date:'Y-m-d' }}</td>
+                  <td>{{ row.date_passage.strftime('%Y-%m-%d') }}</td>
                   <td>
                     {% if row.score >= 8 %}
                       <span class="badge badge-green">Excellent</span>
@@ -105,7 +105,7 @@
                 <tr>
                   <td>{{ row.prenom }} {{ row.nom }}</td>
                   <td><strong>{{ row.score }}/10</strong></td>
-                  <td>{{ row.date_passage|date:'Y-m-d' }}</td>
+                  <td>{{ row.date_passage.strftime('%Y-%m-%d') }}</td>
                   <td>
                     {% if row.score >= 8 %}
                       <span class="badge badge-green">Excellent</span>
