@@ -563,7 +563,7 @@ def dashboard():
                LEFT JOIN question    qst ON qst.id_quiz = q.id
                LEFT JOIN participation p ON p.id_quiz  = q.id
                WHERE q.id_createur = ? AND q.statut = ?
-               GROUP BY q.id
+               GROUP BY q.id, q.titre, q.statut, q.date_creation
                ORDER BY q.date_creation DESC
                LIMIT ? OFFSET ?""",
             (session["user_id"], statut, PER_PAGE, offset)
@@ -577,7 +577,7 @@ def dashboard():
                LEFT JOIN question    qst ON qst.id_quiz = q.id
                LEFT JOIN participation p ON p.id_quiz  = q.id
                WHERE q.id_createur = ?
-               GROUP BY q.id
+               GROUP BY q.id, q.titre, q.statut, q.date_creation
                ORDER BY q.date_creation DESC
                LIMIT ? OFFSET ?""",
             (session["user_id"], PER_PAGE, offset)
@@ -588,7 +588,7 @@ def dashboard():
              SUM(CASE WHEN q.statut='actif'   THEN 1 ELSE 0 END) AS actifs,
              SUM(CASE WHEN q.statut='archive' THEN 1 ELSE 0 END) AS archives,
              COUNT(DISTINCT p.id)                                  AS total_participations,
-             ROUND(AVG(p.score), 1)                               AS score_moyen
+             ROUND(AVG(p.score)::numeric, 1)                      AS score_moyen
            FROM quiz q
            LEFT JOIN participation p ON p.id_quiz = q.id
            WHERE q.id_createur = ?""",
@@ -871,7 +871,7 @@ def scores():
         ).fetchall()
 
         stats = query(
-            """SELECT COUNT(*) AS nb, ROUND(AVG(score),1) AS moyenne,
+            """SELECT COUNT(*) AS nb, ROUND(AVG(score)::numeric,1) AS moyenne,
                       MAX(score) AS max, MIN(score) AS min
                FROM participation WHERE id_quiz=?""",
             (quiz_id,)
