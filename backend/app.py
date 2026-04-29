@@ -660,37 +660,46 @@ def quiz_create():
             return render_template("quiz-create.html")
 
         # INSERT avec récupération de l'ID (compatible SQLite et PostgreSQL)
-        if getattr(g, "_db_type", "sqlite") == "postgres":
-            cur = query(
-                "INSERT INTO quiz (titre, description, duree_minutes, statut, id_createur) VALUES (?,?,?,?,?) RETURNING id",
-                (titre, description, duree, statut, session["user_id"])
-            )
-            result = cur.fetchone()
-            if not result:
-                flash("Erreur lors de la création du quiz.", "error")
+        try:
+            if getattr(g, "_db_type", "sqlite") == "postgres":
+                cur = query(
+                    "INSERT INTO quiz (titre, description, duree_minutes, statut, id_createur) VALUES (?,?,?,?,?) RETURNING id",
+                    (titre, description, duree, statut, session["user_id"])
+                )
+                result = cur.fetchone()
+                if not result:
+                    flash("Erreur lors de la création du quiz (insertion échouée).", "error")
+                    return render_template("quiz-create.html")
+                quiz_id = result["id"]
+            else:
+                cur = query(
+                    "INSERT INTO quiz (titre, description, duree_minutes, statut, id_createur) VALUES (?,?,?,?,?)",
+                    (titre, description, duree, statut, session["user_id"])
+                )
+                quiz_id = cur.lastrowid
+
+            if not quiz_id or quiz_id <= 0:
+                flash(f"Erreur lors de la création du quiz (ID invalide: {quiz_id}).", "error")
                 return render_template("quiz-create.html")
-            quiz_id = result["id"]
-        else:
-            cur = query(
-                "INSERT INTO quiz (titre, description, duree_minutes, statut, id_createur) VALUES (?,?,?,?,?)",
-                (titre, description, duree, statut, session["user_id"])
+
+            # Commit après insertion du quiz pour éviter les problèmes de transaction
+            commit()
+
+            query_many(
+                "INSERT INTO question (id_quiz, texte, options, index_bonne_rep) VALUES (?,?,?,?)",
+                [(quiz_id, t, o, r) for t, o, r in questions]
             )
-            quiz_id = cur.lastrowid
-
-        if not quiz_id or quiz_id <= 0:
-            flash("Erreur lors de la création du quiz.", "error")
+            commit()
+            flash("Quiz créé avec succès !", "success")
+            return redirect(url_for("dashboard"))
+        except Exception as e:
+            # Rollback en cas d'erreur
+            try:
+                get_db().rollback()
+            except:
+                pass
+            flash(f"Erreur lors de la création du quiz: {str(e)}", "error")
             return render_template("quiz-create.html")
-
-        # Commit après insertion du quiz pour éviter les problèmes de transaction
-        commit()
-
-        query_many(
-            "INSERT INTO question (id_quiz, texte, options, index_bonne_rep) VALUES (?,?,?,?)",
-            [(quiz_id, t, o, r) for t, o, r in questions]
-        )
-        commit()
-        flash("Quiz créé avec succès !", "success")
-        return redirect(url_for("dashboard"))
 
     return render_template("quiz-create.html")
 
