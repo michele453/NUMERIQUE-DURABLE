@@ -101,7 +101,7 @@ CREATE TABLE participation (
     score         REAL             NOT NULL,
     date_passage  TIMESTAMP        NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_quiz)     REFERENCES quiz(id)        ON DELETE CASCADE,
-    FOREIGN KEY (id_etudiant) REFERENCES utilisateur(id) ON DELETE SET NULL,
+    FOREIGN KEY (id_etudiant) REFERENCES utilisateur(id) ON DELETE CASCADE,
     UNIQUE(id_quiz, id_etudiant)
 );
 

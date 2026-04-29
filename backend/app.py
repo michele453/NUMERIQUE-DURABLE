@@ -28,7 +28,6 @@ def _table_exists():
     """Vérifie si la table utilisateur existe."""
     try:
         if DATABASE_URL:
-            print("[TABLE CHECK] Vérification sur PostgreSQL...")
             import psycopg2
             conn = psycopg2.connect(DATABASE_URL)
             cur = conn.cursor()
@@ -39,33 +38,22 @@ def _table_exists():
                 );
             """)
             result = cur.fetchone()[0]
-            print(f"[TABLE CHECK] PostgreSQL - Table existe: {result}")
             cur.close()
             conn.close()
             return result
         else:
-            print("[TABLE CHECK] Vérification sur SQLite...")
             import sqlite3
             db_path = app.config["DATABASE"]
-            print(f"[TABLE CHECK] Chemin DB: {db_path}")
-            print(f"[TABLE CHECK] DB existe: {os.path.exists(db_path)}")
-            
             if not os.path.exists(db_path):
-                print("[TABLE CHECK] DB n'existe pas")
                 return False
-            
             conn = sqlite3.connect(db_path)
             cur = conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='utilisateur'"
             )
             result = cur.fetchone() is not None
-            print(f"[TABLE CHECK] SQLite - Table existe: {result}")
             conn.close()
             return result
-    except Exception as e:
-        import traceback
-        print(f"[TABLE CHECK ERROR] Erreur: {e}")
-        print(traceback.format_exc())
+    except Exception:
         return False
 
 
@@ -197,28 +185,19 @@ def seed_db():
     try:
         db = get_db()
         seed_path = os.path.join(os.path.dirname(__file__), "..", "database", "seed.sql")
-        print(f"[SEED] Lecture du fichier seed: {seed_path}")
         
         with open(seed_path, "r", encoding="utf-8") as f:
             sql = f.read()
-        
-        print(f"[SEED] SQL length: {len(sql)} caractères")
 
         if getattr(g, "_db_type", "sqlite") == "postgres":
-            print("[SEED] Exécution sur PostgreSQL")
             cur = db.cursor()
             cur.execute(sql)
             db.commit()
         else:
-            print("[SEED] Exécution sur SQLite")
             db.executescript(sql)
             db.commit()
-        
-        print("[SEED] Seed exécutée avec succès")
     except Exception as e:
-        import traceback
-        print(f"[SEED ERROR] Erreur: {e}")
-        print(traceback.format_exc())
+        print(f"Erreur lors du seed: {e}")
         raise
 
 
@@ -281,34 +260,23 @@ def initialize_db():
     
     if not _db_initialized:
         table_exists = _table_exists()
-        print(f"[DB CHECK] Table utilisateur existe: {table_exists}")
         
         if not table_exists:
             try:
-                print("[DB INIT] Initialisation de la base de données au premier appel...")
                 init_db()
-                print("[DB INIT] Schéma créé")
                 seed_db()
-                print("[DB INIT] Données de test insérées")
             except Exception as e:
-                import traceback
-                print(f"[DB ERROR] Erreur lors de l'initialisation: {e}")
-                print(traceback.format_exc())
+                print(f"Erreur lors de l'initialisation de la base: {e}")
         else:
             # La table existe, vérifier si elle a des données
             try:
                 count_result = query("SELECT COUNT(*) as cnt FROM utilisateur").fetchone()
                 user_count = count_result['cnt']
-                print(f"[DB CHECK] Nombre d'utilisateurs: {user_count}")
                 
                 if user_count == 0:
-                    print("[DB INIT] Table vide, insertion des données de test...")
                     seed_db()
-                    print("[DB INIT] Données de test insérées")
             except Exception as e:
-                import traceback
-                print(f"[DB ERROR] Erreur lors de la vérification du contenu: {e}")
-                print(traceback.format_exc())
+                print(f"Erreur lors de la vérification du contenu: {e}")
         
         _db_initialized = True
 
@@ -316,97 +284,6 @@ def initialize_db():
 # ─────────────────────────────────────────────
 # ROUTES — AUTH
 # ─────────────────────────────────────────────
-
-@app.route("/debug")
-def debug():
-    """Endpoint de debug pour vérifier l'état de la base de données."""
-    try:
-        info = {}
-        info["_db_initialized"] = _db_initialized
-        info["_table_exists"] = _table_exists()
-        
-        # Compter les utilisateurs
-        try:
-            count = query("SELECT COUNT(*) as cnt FROM utilisateur").fetchone()
-            info["user_count"] = count['cnt']
-        except Exception as e:
-            info["user_count_error"] = str(e)
-        
-        # Lister les utilisateurs
-        try:
-            users = query("SELECT id, email, role, actif FROM utilisateur").fetchall()
-            info["users"] = [dict(u) for u in users]
-        except Exception as e:
-            info["users_error"] = str(e)
-        
-        return {
-            "status": "ok",
-            "db_type": getattr(g, "_db_type", "unknown"),
-            "info": info
-        }
-    except Exception as e:
-        import traceback
-        return {
-            "status": "error",
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }
-
-
-@app.route("/force-seed")
-def force_seed():
-    """Force l'insertion des données de test."""
-    try:
-        print("[FORCE SEED] Insertion forcée des données de test...")
-        seed_db()
-        
-        # Vérifier après insertion
-        count = query("SELECT COUNT(*) as cnt FROM utilisateur").fetchone()
-        users = query("SELECT id, email, role, actif FROM utilisateur").fetchall()
-        
-        return {
-            "status": "ok",
-            "message": "Seed forcé terminé",
-            "user_count": count['cnt'],
-            "users": [dict(u) for u in users]
-        }
-    except Exception as e:
-        import traceback
-        print(f"[FORCE SEED ERROR] {e}")
-        print(traceback.format_exc())
-        return {
-            "status": "error",
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }
-
-
-@app.route("/force-init")
-def force_init():
-    """Force l'initialisation de la base de données."""
-    global _db_initialized
-    
-    try:
-        print("[FORCE INIT] Forçage de l'initialisation...")
-        _db_initialized = False  # Reset le flag
-        
-        # Forcer la vérification et l'initialisation
-        initialize_db()
-        
-        return {
-            "status": "ok",
-            "message": "Initialisation forcée terminée"
-        }
-    except Exception as e:
-        import traceback
-        print(f"[FORCE INIT ERROR] {e}")
-        print(traceback.format_exc())
-        return {
-            "status": "error",
-            "error": str(e),
-            "traceback": traceback.format_exc()
-        }
-
 
 @app.route("/")
 def index():
@@ -458,10 +335,7 @@ def auth_login():
         email = request.form.get("email", "").strip().lower()
         pwd   = request.form.get("password", "")
 
-        print(f"[LOGIN] Tentative de connexion avec email: {email}")
-
         if not email or not pwd:
-            print(f"[LOGIN] Email ou mot de passe vide")
             flash("Email et mot de passe requis.", "error")
             return render_template("login.html")
 
@@ -470,24 +344,16 @@ def auth_login():
             (email,)
         ).fetchone()
 
-        print(f"[LOGIN] Utilisateur trouvé: {user is not None}")
-        if user:
-            print(f"[LOGIN] Actif: {user['actif']}, Rôle: {user['role']}")
-
         pwd_ok = user and bcrypt.checkpw(pwd.encode(), user["mot_de_passe"].encode())
-        print(f"[LOGIN] Mot de passe correct: {pwd_ok}")
 
         if not pwd_ok:
-            print(f"[LOGIN] Identifiants invalides")
             flash("Email ou mot de passe incorrect.", "error")
             return render_template("login.html")
 
         if not user["actif"]:
-            print(f"[LOGIN] Compte inactif")
             flash("Votre compte est en attente de validation par l'administrateur.", "warning")
             return render_template("login.html")
 
-        print(f"[LOGIN] Connexion réussie pour {user['prenom']} {user['nom']}")
         session.clear()
         session["user_id"] = user["id"]
         session["role"]    = user["role"]
@@ -1159,6 +1025,8 @@ def admin_user_delete(user_id):
         flash("Vous ne pouvez pas supprimer votre propre compte.", "error")
         return redirect(url_for("admin_users"))
 
+    # Delete participations first to avoid foreign key constraint issues
+    query("DELETE FROM participation WHERE id_etudiant=?", (user_id,))
     query("DELETE FROM utilisateur WHERE id=?", (user_id,))
     commit()
     flash("Utilisateur supprimé.", "success")
