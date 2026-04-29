@@ -620,7 +620,7 @@ def quiz_list():
            JOIN utilisateur u ON u.id = q.id_createur
            LEFT JOIN question qst ON qst.id_quiz = q.id
            WHERE q.statut = 'actif'
-           GROUP BY q.id, q.titre, q.description, u.prenom, u.nom
+           GROUP BY q.id, q.titre, q.description, q.date_creation, u.prenom, u.nom
            ORDER BY q.date_creation DESC
            LIMIT ? OFFSET ?""",
         (PER_PAGE, offset)
@@ -665,13 +665,24 @@ def quiz_create():
                 "INSERT INTO quiz (titre, description, duree_minutes, statut, id_createur) VALUES (?,?,?,?,?) RETURNING id",
                 (titre, description, duree, statut, session["user_id"])
             )
-            quiz_id = cur.fetchone()["id"]
+            result = cur.fetchone()
+            if not result:
+                flash("Erreur lors de la création du quiz.", "error")
+                return render_template("quiz-create.html")
+            quiz_id = result["id"]
         else:
             cur = query(
                 "INSERT INTO quiz (titre, description, duree_minutes, statut, id_createur) VALUES (?,?,?,?,?)",
                 (titre, description, duree, statut, session["user_id"])
             )
             quiz_id = cur.lastrowid
+
+        if not quiz_id or quiz_id <= 0:
+            flash("Erreur lors de la création du quiz.", "error")
+            return render_template("quiz-create.html")
+
+        # Commit après insertion du quiz pour éviter les problèmes de transaction
+        commit()
 
         query_many(
             "INSERT INTO question (id_quiz, texte, options, index_bonne_rep) VALUES (?,?,?,?)",
