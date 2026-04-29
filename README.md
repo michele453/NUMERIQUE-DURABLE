@@ -88,3 +88,6 @@ L'application sera accessible sur `http://127.0.0.1:5000`.
 - Envoi d'emails de validation
 - Gestion des permissions plus fine et rôles supplémentaires
 - Interface plus riche pour l'édition de quiz
+
+  ##  Site déployé
+ https://numerique-durable.onrender.com
