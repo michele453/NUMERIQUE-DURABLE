@@ -659,11 +659,19 @@ def quiz_create():
             flash("Ajoutez au moins 2 questions.", "error")
             return render_template("quiz-create.html")
 
+        # Vérifier que l'utilisateur est connecté
+        if "user_id" not in session or not session["user_id"]:
+            flash("Erreur: utilisateur non connecté.", "error")
+            return redirect(url_for("login"))
+
         # INSERT avec récupération de l'ID (compatible SQLite et PostgreSQL)
         try:
             if getattr(g, "_db_type", "sqlite") == "postgres":
+                # Pour PostgreSQL, s'assurer que la séquence est correcte
+                query("SELECT setval('quiz_id_seq', COALESCE((SELECT MAX(id) FROM quiz), 0) + 1, false)")
+                
                 cur = query(
-                    "INSERT INTO quiz (titre, description, duree_minutes, statut, id_createur) VALUES (?,?,?,?,?) RETURNING id",
+                    "INSERT INTO quiz (titre, description, duree_minutes, statut, id_createur) VALUES (%s,%s,%s,%s,%s) RETURNING id",
                     (titre, description, duree, statut, session["user_id"])
                 )
                 result = cur.fetchone()
