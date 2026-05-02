@@ -826,11 +826,26 @@ def quiz_submit(quiz_id):
     score_sur_10 = round((score / len(questions)) * 10, 1) if questions else 0
 
     try:
-        query(
-            "INSERT INTO participation (id_quiz, id_etudiant, score) VALUES (?,?,?)",
+        cur = query(
+            "INSERT INTO participation (id_quiz, id_etudiant, score) VALUES (?,?,?) RETURNING id",
             (quiz_id, session["user_id"], score_sur_10)
         )
+        participation_id = last_insert_id(cur)
         commit()
+
+        # Enregistrer les réponses individuelles
+        reponses = []
+        for q in questions:
+            answer = request.form.get(f"q[{q['id']}]", "")
+            if answer.isdigit():
+                reponses.append((participation_id, q['id'], int(answer)))
+        
+        if reponses:
+            query_many(
+                "INSERT INTO etudiant_reponse (id_participation, id_question, reponse_donnee) VALUES (?,?,?)",
+                reponses
+            )
+            commit()
     except Exception:
         flash("Vous avez déjà soumis ce quiz.", "error")
         return redirect(url_for("scores"))

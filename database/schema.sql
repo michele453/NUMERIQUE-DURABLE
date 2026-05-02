@@ -107,3 +107,16 @@ CREATE TABLE participation (
 
 CREATE INDEX idx_participation_quiz      ON participation(id_quiz);
 CREATE INDEX idx_participation_etudiant  ON participation(id_etudiant);
+
+-- ── Table etudiant_reponse ────────────────────────────────────
+CREATE TABLE etudiant_reponse (
+    id              SERIAL PRIMARY KEY,
+    id_participation INTEGER NOT NULL,
+    id_question     INTEGER NOT NULL,
+    reponse_donnee  INTEGER NOT NULL,
+    FOREIGN KEY (id_participation) REFERENCES participation(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_question) REFERENCES question(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_etudiant_reponse_participation ON etudiant_reponse(id_participation);
+CREATE INDEX idx_etudiant_reponse_question ON etudiant_reponse(id_question);
