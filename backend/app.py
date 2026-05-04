@@ -795,11 +795,19 @@ def quiz_take(quiz_id):
 
         if participation:
             # Récupérer les réponses de l'étudiant
-            answers = query(
-                "SELECT id_question, reponse_donnee FROM etudiant_reponse WHERE id_participation=?",
-                (participation["id"],)
-            ).fetchall()
-            student_answers = {a["id_question"]: a["reponse_donnee"] for a in answers}
+            try:
+                answers = query(
+                    "SELECT id_question, reponse_donnee FROM etudiant_reponse WHERE id_participation=?",
+                    (participation["id"],)
+                ).fetchall()
+                student_answers = {a["id_question"]: a["reponse_donnee"] for a in answers}
+            except Exception as e:
+                # La table peut ne pas exister dans une ancienne version de la base.
+                if "etudiant_reponse" in str(e) or "no such table" in str(e).lower() or "relation \"etudiant_reponse\" does not exist" in str(e).lower():
+                    print(f"Table manquante, passage en mode score uniquement: {e}")
+                    student_answers = {}
+                else:
+                    raise
 
         for q in questions:
             try:
