@@ -214,6 +214,39 @@ footer {
 .w-full      { width: 100%; }
 .hidden      { display: none; }
 
+/* ── Quiz Review Styles ── */
+.correct-answer {
+  background-color: #d4edda;
+  border-left: 4px solid #28a745;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.wrong-answer {
+  background-color: #f8d7da;
+  border-left: 4px solid #dc3545;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+.answer-indicator {
+  font-weight: bold;
+  font-size: 0.85rem;
+  margin-left: auto;
+}
+
+.answer-indicator.correct {
+  color: #28a745;
+}
+
+.answer-indicator.wrong {
+  color: #dc3545;
+}
+
+.text-success {
+  color: #28a745;
+}
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   h1 { font-size: 1.4rem; }
