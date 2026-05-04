@@ -769,18 +769,6 @@ def quiz_delete(quiz_id):
 @app.route("/quiz/<int:quiz_id>/take")
 @role_required("etudiant")
 def quiz_take(quiz_id):
-    quiz = query(
-        "SELECT * FROM quiz WHERE id = ? AND statut = 'actif'", (quiz_id,)
-    ).fetchone()
-    if not quiz:
-        abort(404)
-
-    if not can_student_take_quiz(session["user_id"], quiz_id):
-        flash("Vous n'avez pas accès à ce quiz.", "error")
-        return redirect(url_for("quiz_list"))
-
-@role_required("etudiant")
-def quiz_take(quiz_id):
     try:
         quiz = query(
             "SELECT * FROM quiz WHERE id = ? AND statut = 'actif'", (quiz_id,)
