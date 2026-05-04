@@ -781,57 +781,67 @@ def quiz_take(quiz_id):
 
 @role_required("etudiant")
 def quiz_take(quiz_id):
-    quiz = query(
-        "SELECT * FROM quiz WHERE id = ? AND statut = 'actif'", (quiz_id,)
-    ).fetchone()
-    if not quiz:
-        abort(404)
+    try:
+        quiz = query(
+            "SELECT * FROM quiz WHERE id = ? AND statut = 'actif'", (quiz_id,)
+        ).fetchone()
+        if not quiz:
+            abort(404)
 
-    if not can_student_take_quiz(session["user_id"], quiz_id):
-        flash("Vous n'avez pas accès à ce quiz.", "error")
-        return redirect(url_for("quiz_list"))
+        if not can_student_take_quiz(session["user_id"], quiz_id):
+            flash("Vous n'avez pas accès à ce quiz.", "error")
+            return redirect(url_for("quiz_list"))
 
-    participation = query(
-        "SELECT id, score FROM participation WHERE id_quiz=? AND id_etudiant=?",
-        (quiz_id, session["user_id"])
-    ).fetchone()
+        participation = query(
+            "SELECT id, score FROM participation WHERE id_quiz=? AND id_etudiant=?",
+            (quiz_id, session["user_id"])
+        ).fetchone()
 
-    questions = query(
-        "SELECT id, texte, options, index_bonne_rep FROM question WHERE id_quiz=? ORDER BY id",
-        (quiz_id,)
-    ).fetchall()
-
-    questions_parsed = []
-    student_answers = {}
-
-    if participation:
-        # Récupérer les réponses de l'étudiant
-        answers = query(
-            "SELECT id_question, reponse_donnee FROM etudiant_reponse WHERE id_participation=?",
-            (participation["id"],)
+        questions = query(
+            "SELECT id, texte, options, index_bonne_rep FROM question WHERE id_quiz=? ORDER BY id",
+            (quiz_id,)
         ).fetchall()
-        student_answers = {a["id_question"]: a["reponse_donnee"] for a in answers}
 
-    for q in questions:
-        options = json.loads(q["options"])
-        question_data = {
-            "id": q["id"],
-            "texte": q["texte"],
-            "options": options,
-            "correct_index": q["index_bonne_rep"]
-        }
-        
+        questions_parsed = []
+        student_answers = {}
+
         if participation:
-            question_data["student_answer"] = student_answers.get(q["id"])
-            question_data["is_correct"] = student_answers.get(q["id"]) == q["index_bonne_rep"]
-        
-        questions_parsed.append(question_data)
+            # Récupérer les réponses de l'étudiant
+            answers = query(
+                "SELECT id_question, reponse_donnee FROM etudiant_reponse WHERE id_participation=?",
+                (participation["id"],)
+            ).fetchall()
+            student_answers = {a["id_question"]: a["reponse_donnee"] for a in answers}
 
-    return render_template("quiz-take.html", 
-                         quiz=quiz, 
-                         questions=questions_parsed, 
-                         already_taken=participation is not None,
-                         score=participation["score"] if participation else None)
+        for q in questions:
+            try:
+                options = json.loads(q["options"])
+            except (json.JSONDecodeError, TypeError):
+                options = []  # Fallback si les options ne sont pas du JSON valide
+            
+            question_data = {
+                "id": q["id"],
+                "texte": q["texte"],
+                "options": options,
+                "correct_index": q["index_bonne_rep"]
+            }
+            
+            if participation:
+                question_data["student_answer"] = student_answers.get(q["id"])
+                question_data["is_correct"] = student_answers.get(q["id"]) == q["index_bonne_rep"]
+            
+            questions_parsed.append(question_data)
+
+        return render_template("quiz-take.html", 
+                             quiz=quiz, 
+                             questions=questions_parsed, 
+                             already_taken=participation is not None,
+                             score=participation["score"] if participation else None)
+    
+    except Exception as e:
+        print(f"Erreur dans quiz_take: {e}")
+        flash("Une erreur est survenue lors du chargement du quiz.", "error")
+        return redirect(url_for("quiz_list"))
 
 
 @app.route("/quiz/<int:quiz_id>/submit", methods=["POST"])
